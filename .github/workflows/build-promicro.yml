@@ -1,0 +1,55 @@
+name: Build Corne v3 ProMicro nRF52840
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build git cmake python3-pip
+          pip install --upgrade pip
+          pip install west
+
+      - name: Initialize ZMK workspace
+        run: |
+          west init -m https://github.com/zmkfirmware/zmk.git zmk
+          cd zmk
+          west update
+          west zephyr-export
+
+      - name: Copy user config
+        run: |
+          cp -r ../config ./app
+
+      - name: Build left half
+        run: |
+          cd zmk/app
+          west build -b promicro_nrf52840 app -- -DZMK_CONFIG=$(pwd)/config -DSHIELD=corne_left
+
+      - name: Build right half
+        run: |
+          cd zmk/app
+          west build -b promicro_nrf52840 app -- -DZMK_CONFIG=$(pwd)/config -DSHIELD=corne_right
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: corne-firmware
+          path: |
+            zmk/app/build/zephyr/zmk.uf2
+            zmk/app/build/zephyr/zmk.hex
