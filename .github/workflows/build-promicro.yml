@@ -45,11 +45,12 @@ jobs:
         run: |
           cd zmk/app
           west build -b promicro_nrf52840 app -- -DZMK_CONFIG=$(pwd)/config -DSHIELD=corne_right
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+          
+      - uses: actions/upload-artifact@v4
         with:
           name: corne-firmware
           path: |
             zmk/app/build/zephyr/zmk.uf2
             zmk/app/build/zephyr/zmk.hex
+
+
